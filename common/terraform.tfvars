@@ -1,4 +1,3 @@
-aws_account_id        =  "867067409174"
 region                =  "eu-west-1"
 application           =  "playground"
 owner                 =  "grk"

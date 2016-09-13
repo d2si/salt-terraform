@@ -1,4 +1,3 @@
-variable  "aws_account_id"            {}
 variable  "region"                    {}
 variable  "application"               {}
 variable  "owner"                     {}

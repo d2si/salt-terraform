@@ -35,3 +35,13 @@ Update terraform.tfvars for your environment (state bucket and key pair in parti
 ```
 terraform apply
 ```
+### Run your first salt commands
+On the master see if minions have connected
+```
+sudo salt-key -L
+```
+You can then accept the minions and test the connection
+```
+sudo salt-key -A
+sudo salt '*' test.ping
+```

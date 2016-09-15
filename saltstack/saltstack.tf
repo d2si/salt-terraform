@@ -24,18 +24,21 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_instance" "saltmaster" {
-    ami = "${data.aws_ami.ubuntu.id}"
-    instance_type = "${var.master_instance_type}"
-    subnet_id = "${data.terraform_remote_state.common.public_subnets[0]}"
-    key_name = "${var.key_name}"
-    vpc_security_group_ids = ["${aws_security_group.sg_salt.id}"]
+module "saltservers" {
+    source = "../modules/instances"
+    name = ["saltmaster", "minion1"]
+
+    ami_id = "${data.aws_ami.ubuntu.id}"
+    type = "${var.master_instance_type}"
+    key = "${var.key_name}"
+    subnet = "${data.terraform_remote_state.common.public_subnets}"
+    security_groups = ["${aws_security_group.sg_salt.id}"]
+
     user_data = "${file("scripts/master-bootstrap.sh")}"
-    tags {
-        Name         =  "${var.application}-master"
-        Application  =  "${var.application}"
-        Owner        =  "${var.owner}"
-    }
+
+    private_zone_id = "${data.terraform_remote_state.common.private_host_zone}"
+    reverse_zone_id = "${data.terraform_remote_state.common.private_host_zone_reverse}"
+    domain_name = "${data.terraform_remote_state.common.private_domain_name}"
 }
 
 # Security group for salt instance
@@ -69,51 +72,9 @@ resource "aws_security_group" "sg_salt" {
     tags { Name = "${var.application}" }
 }
 
-resource "aws_launch_configuration" "lc_minions" {
-
-  name_prefix = "lc-salt-minions-"
-  image_id = "${data.aws_ami.ubuntu.id}"
-  instance_type = "${var.minion_instance_type}"
-  user_data = "${file("scripts/master-bootstrap.sh")}"
-
-  lifecycle {
-      create_before_destroy = true
-  }
-}
-
-resource "aws_autoscaling_group" "asg_minions" {
-    name = "asg-salt-minions"
-    launch_configuration = "${aws_launch_configuration.lc_minions.name}"
-    vpc_zone_identifier = [ "${data.terraform_remote_state.common.private_subnets}" ]
-    min_size = "${var.minions_asg_min_size}"
-    max_size = "${var.minions_asg_max_size}"
-    desired_capacity = "${var.minions_asg_desired}"
-    health_check_grace_period = 300
-    health_check_type = "EC2"
-
-    lifecycle {
-      create_before_destroy = true
-    }
-
-    tag {
-        key  =  "Application"
-        value = "${var.application}"
-        propagate_at_launch = true
-    }
-
-    tag {
-      key   = "Owner"
-      value =  "${var.owner}"
-      propagate_at_launch = true
-    }
-}
-
-
-output  "saltmaster_public_ip"            {  value  =  "${aws_instance.saltmaster.public_ip}" }
-output  "saltmaster_public_dns"            {  value  =  "${aws_instance.saltmaster.public_dns}" }
-output  "saltmaster_private_ip"            {  value  =  "${aws_instance.saltmaster.private_dns}" }
-output  "saltmaster_private_dns"            {  value  =  "${aws_instance.saltmaster.private_dns}" }
+output  "saltservers_private_dns"            {  value  =  "${module.saltservers.private_dns}" }
+output  "saltservers_private_ip"            {  value  =  "${module.saltservers.private_ip}" }
+output  "saltservers_public_ip"            {  value  =  "${module.saltservers.public_ip}" }
 output  "minions_asg"                     {  value  =  "${aws_autoscaling_group.asg_minions.name}" }
 output  "application"                     {  value  =  "${var.application}" }
 output  "owner"                           {  value  =  "${var.owner}" }
-

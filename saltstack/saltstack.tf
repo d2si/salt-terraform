@@ -29,7 +29,7 @@ resource "aws_instance" "saltmaster" {
     instance_type = "${var.master_instance_type}"
     subnet_id = "${element(split(",", data.terraform_remote_state.common.public_subnets), 0)}"
     key_name = "${var.key_name}"
-    security_groups = ["${aws_security_group.sg_salt.id}"]
+    vpc_security_group_ids = ["${aws_security_group.sg_salt.id}"]
     user_data = "${file("scripts/master-bootstrap.sh")}"
     tags {
         Name         =  "${var.application}-master"
@@ -84,9 +84,10 @@ resource "aws_launch_configuration" "lc_minions" {
 resource "aws_autoscaling_group" "asg_minions" {
     name = "asg-salt-minions"
     launch_configuration = "${aws_launch_configuration.lc_minions.name}"
-    max_size = 5
-    min_size = 2
-    desired_capacity = 2
+    vpc_zone_identifier = ["${split(",",data.terraform_remote_state.common.private_subnets)}"]
+    min_size = "${var.minions_asg_min_size}"
+    max_size = "${var.minions_asg_max_size}"
+    desired_capacity = "${var.minions_asg_desired}"
     health_check_grace_period = 300
     health_check_type = "EC2"
 

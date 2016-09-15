@@ -1,4 +1,15 @@
+application             = "saltstack"
+owner                   = "d2si"
+state_bucket            = "tfstates"
+state_key               = "saltvpc"
 trusted_networks        = "0.0.0.0/0"
+key_name                = "aws-dev"
 ami_id                  = "ami-ed82e39e"
 private_cidr            = "10.242.0.0/16"
 
+master_instance_type    = "t2.micro"
+minion_instance_type    = "t2.micro"
+
+minions_asg_min_size    = "1"
+minions_asg_max_size    = "5"
+minions_asg_desired     = "2"

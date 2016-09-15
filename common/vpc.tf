@@ -106,6 +106,14 @@ resource "aws_route_table_association" "rtaprv" {
   route_table_id = "${aws_route_table.private.id}"
 }
 
+module "private_dns" {
+    source = "../modules/dns_zone"
+    private_domain_name = "d2si.test"
+    vpc_cidr = "${var.cidr_block}"
+    vpc = "${aws_vpc.main.id}"
+}
+
+
 output "vpc_id" {
   value = "${aws_vpc.main.id}"
 }
@@ -144,4 +152,16 @@ output "application" {
 
 output "owner" {
   value = "${var.owner}"
+}
+
+output "private_domain_name" {
+  value = "${module.private_dns.private_domain_name}"
+}
+
+output "private_host_zone" {
+  value = "${module.private_dns.private_host_zone}"
+}
+
+output "private_host_zone_reverse" {
+  value = "${module.private_dns.private_host_zone_reverse}"
 }

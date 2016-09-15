@@ -24,18 +24,20 @@ data "aws_ami" "ubuntu" {
   owners = ["099720109477"] # Canonical
 }
 
-resource "aws_instance" "saltmaster" {
-    ami = "${data.aws_ami.ubuntu.id}"
-    instance_type = "${var.master_instance_type}"
-    subnet_id = "${data.terraform_remote_state.common.public_subnets[0]}"
-    key_name = "${var.key_name}"
-    vpc_security_group_ids = ["${aws_security_group.sg_salt.id}"]
+module "saltmaster" {
+    source = "../modules/instances"
+    ami_id = "${data.aws_ami.ubuntu.id}"
+    type = "${var.master_instance_type}"
+    key = "${var.key_name}"
+    subnet = "${data.terraform_remote_state.common.public_subnets[0]}"
+    security_groups = ["${aws_security_group.sg_salt.id}"]
+    name = "saltmaster"
+
     user_data = "${file("scripts/master-bootstrap.sh")}"
-    tags {
-        Name         =  "${var.application}-master"
-        Application  =  "${var.application}"
-        Owner        =  "${var.owner}"
-    }
+
+    private_zone_id = "${data.terraform_remote_state.common.private_host_zone}"
+    reverse_zone_id = "${data.terraform_remote_state.common.private_host_zone_reverse}"
+    domain_name = "${data.terraform_remote_state.common.private_domain_name}"
 }
 
 # Security group for salt instance
@@ -109,11 +111,10 @@ resource "aws_autoscaling_group" "asg_minions" {
 }
 
 
-output  "saltmaster_public_ip"            {  value  =  "${aws_instance.saltmaster.public_ip}" }
-output  "saltmaster_public_dns"            {  value  =  "${aws_instance.saltmaster.public_dns}" }
-output  "saltmaster_private_ip"            {  value  =  "${aws_instance.saltmaster.private_dns}" }
-output  "saltmaster_private_dns"            {  value  =  "${aws_instance.saltmaster.private_dns}" }
+output  "saltmaster_public_ip"            {  value  =  "${module.saltmaster.public_ip}" }
+output  "saltmaster_public_dns"            {  value  =  "${module.saltmaster.public_dns}" }
+output  "saltmaster_private_ip"            {  value  =  "${module.saltmaster.private_dns}" }
+output  "saltmaster_private_dns"            {  value  =  "${module.saltmaster.private_dns}" }
 output  "minions_asg"                     {  value  =  "${aws_autoscaling_group.asg_minions.name}" }
 output  "application"                     {  value  =  "${var.application}" }
 output  "owner"                           {  value  =  "${var.owner}" }
-

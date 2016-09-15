@@ -12,7 +12,7 @@ variable key {
 }
 
 variable subnet {
-  type = "string"
+  type = "list"
 }
 
 variable security_groups {
@@ -20,7 +20,7 @@ variable security_groups {
 }
 
 variable name {
-  type = "string"
+  type = "list"
 }
 
 variable user_data {
@@ -49,56 +49,53 @@ variable domain_name {
 }
 
 data "template_file" "user_data" {
+  count = "${length(var.name)}"
   template = "${file("${path.module}/files/hostname.tpl.sh")}"
 
   vars {
-    hostname = "${var.name}"
+    hostname = "${var.name[count.index]}"
   }
 }
 
 resource "aws_instance" "instance" {
+  count = "${length(var.name)}"
   ami                    = "${var.ami_id}"
   instance_type          = "${var.type}"
   key_name               = "${var.key}"
-  subnet_id              = "${var.subnet}"
+  subnet_id              = "${var.subnet[count.index]}"
   vpc_security_group_ids = ["${var.security_groups}"]
-  user_data              = "${data.template_file.user_data.rendered}\n${var.user_data}"
+  user_data              = "${data.template_file.user_data.*.rendered[count.index]}\n${var.user_data}"
 
   tags {
-    Name = "${var.name}"
+    Name = "${var.name[count.index]}"
   }
 }
 
 resource "aws_route53_record" "dns_record" {
-#  count   = "${length(compact(split(",", var.private_zone_id)))}"
+  count = "${length(var.name)}"
   zone_id = "${var.private_zone_id}"
-  name    = "${var.name}"
+  name    = "${var.name[count.index]}"
   type    = "A"
   ttl     = "${var.record_ttl}"
-  records = ["${aws_instance.instance.private_ip}"]
+  records = ["${aws_instance.instance.*.private_ip[count.index]}"]
 }
 
 resource "aws_route53_record" "dns_reverse" {
-#  count   = "${length(compact(split(",", var.reverse_zone_id)))}"
+  count = "${length(var.name)}"
   zone_id = "${var.reverse_zone_id}"
-  name    = "${replace(aws_instance.instance.private_ip,"/([0-9]+).([0-9]+).([0-9]+).([0-9]+)/","$4.$3")}"
+  name    = "${replace(aws_instance.instance.*.private_ip[count.index],"/([0-9]+).([0-9]+).([0-9]+).([0-9]+)/","$4.$3")}"
   type    = "PTR"
   ttl     = "${var.record_ttl}"
-  records = ["${var.name}.${var.domain_name}"]
+  records = ["${var.name[count.index]}.${var.domain_name}"]
 }
 
 output "public_ip" {
-  value = "${aws_instance.instance.public_ip}"
+  value = ["${aws_instance.instance.*.public_ip}"]
 }
-
-output "public_dns" {
-  value = "${aws_instance.instance.public_dns}"
-}
-
 output "private_ip" {
-  value = "${aws_instance.instance.private_dns}"
+  value = ["${aws_instance.instance.private_dns}"]
 }
 
 output "private_dns" {
-  value = "${aws_instance.instance.private_dns}"
+  value = ["${var.name}"]
 }

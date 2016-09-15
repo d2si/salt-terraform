@@ -1,49 +1,48 @@
-variable "region" {
-  default = "eu-west-1"
+variable "region" { 
+    type = "string"
+    default = "eu-west-1"
 }
-
-variable  "application" {
-  default = "saltstack"
+variable "application" {
+    type = "string"
+    default = "saltstack"
 }
-variable  "owner" {
-  default = "grk"
+variable "owner" {
+    type = "string"
+    default = "d2si" 
 }
-
 variable "state_bucket" {
-  default = "grkoffi-tfstates"
+    type = "string"
 }
 variable "state_key" {
-  default = "common/infra.tfstate"
+    type = "string"
+}
+variable "trusted_networks" {
+    type = "list"
+    default = [ "0.0.0.0/0" ]
+}
+variable "key_name" {
+    type = "string"
 }
 
 variable "master_instance_type" {
-  default = "t2.micro"
+    type = "string"
+    default = "t2.micro" 
 }
-
 variable "minion_instance_type" {
-  default = "t2.micro"
+    type = "string"
+    default = "t2.micro"
 }
 
-variable "trusted_networks" {}
-
-variable "key_name" {
-  default = "grk-us-west-1"
+variable "minions_asg_min_size" { 
+    type = "string"
+    default = "1"
 }
-
-variable "ami_id" {}
-
-
-variable "private_cidr" {}
-
 variable "minions_asg_max_size" {
-  default = "5"
+    type = "string"
+    default = "4"
 }
-
-variable "minions_asg_min_size" {
-  default = "1"
-}
-
 variable "minions_asg_desired" {
-  default = "2"
+    type = "string"
+    default = "2"
 }
 

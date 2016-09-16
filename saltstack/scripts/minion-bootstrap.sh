@@ -9,9 +9,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 apt-get upgrade -y
 apt-get install -y language-pack-en
-apt-get install -y salt-master salt-minion
+apt-get install -y salt-minion
 
-systemctl enable salt-master
 systemctl enable salt-minion
-systemctl start salt-master
 systemctl start salt-minion

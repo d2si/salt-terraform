@@ -1,5 +1,10 @@
 # salt-terraform
 
+
+### Prerequisites
+
+-   [terraform ](https://www.terraform.io/downloads.html) 0.7.3 minimum
+
 ### Set env variable for terraform credentials
 ```
 export AWS_PROFILE=
